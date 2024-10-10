@@ -75,7 +75,7 @@ class TabunganController extends Controller
                 $nama = $data['nama'];
 
                 $vaData = DBF::table('', 'MpayDsn')
-                    ->raw("SELECT t.NO_REK, t.NAMA, t.ALAMAT, t.SALDO_AKHR, r.TGL_TRAN FROM mst_tab AS t LEFT JOIN TRN_TAB AS r ON r.NO_REK = t.NO_REK WHERE t.NO_REK LIKE '%$nama%' OR t.NAMA LIKE '%$nama%'")
+                    ->raw("SELECT t.NO_REK, t.NAMA, t.ALAMAT, t.SALDO_AKHR FROM mst_tab AS t WHERE t.NO_REK LIKE '%$nama%' OR t.NAMA LIKE '%$nama%'")
                     ->limit(100)
                     ->get();
 
@@ -208,8 +208,6 @@ class TabunganController extends Controller
                     ], 400);
                 }
 
-
-
                 // Mengambil data saldo  dan tujuan
                 $rec = DBF::table('TRN_TAB', 'MpayDsn')
                     ->select(
@@ -264,16 +262,16 @@ class TabunganController extends Controller
                         ->update($arrDataMST);
 
                     $vaRes = [
-                        "Faktur" => $faktur,
-                        "Rekening" => $data['rekening'],
-                        "KodeTransaksi" => "01",
+                        "FAKTUR" => $faktur,
+                        "REKENING" => $data['rekening'],
+                        "KODETRANSAKSI" => "01",
                         "DK" => $data['dk'],
-                        "Jumlah" => strval($data["nominal"]),
-                        "Debet" => strval($data['nominal']),
-                        "Kredit" => "0",
-                        "Keterangan" => "Setoran an. " . $rekening['NAMA'] . " [" . $data['rekening'] . "]",
-                        "UserName" => $data["username"],
-                        "DateTime" => date('YmdHis')
+                        "JUMLAH" => strval($data["nominal"]),
+                        "DEBET" => strval($data['nominal']),
+                        "KREDIT" => "0",
+                        "KETERANGAN" => "Setoran an. " . $rekening['NAMA'] . " [" . $data['rekening'] . "]",
+                        "USERNAME" => $data["username"],
+                        "DATETIME" => date('YmdHis')
                     ];
 
                     if ($update == "UPDATED") {
@@ -352,8 +350,6 @@ class TabunganController extends Controller
                     ], 400);
                 }
 
-
-
                 // Mengambil data saldo  dan tujuan
                 $rec = DBF::table('TRN_TAB', 'MpayDsn')
                     ->select(
@@ -408,16 +404,16 @@ class TabunganController extends Controller
                         ->update($arrDataMST);
 
                     $vaRes = [
-                        "Faktur" => $faktur,
-                        "Rekening" => $data['rekening'],
-                        "KodeTransaksi" => "01",
+                        "FAKTUR" => $faktur,
+                        "REKENING" => $data['rekening'],
+                        "KODETRANSAKSI" => "01",
                         "DK" => $data['dk'],
-                        "Jumlah" => strval($data["nominal"]),
-                        "Debet" => strval($data['nominal']),
-                        "Kredit" => "0",
-                        "Keterangan" => "Setoran an. " . $rekening['NAMA'] . " [" . $data['rekening'] . "]",
-                        "UserName" => $data["username"],
-                        "DateTime" => date('YmdHis')
+                        "JUMLAH" => strval($data["nominal"]),
+                        "DEBET" => strval($data['nominal']),
+                        "KREDIT" => "0",
+                        "KETERANGAN" => "Setoran an. " . $rekening['NAMA'] . " [" . $data['rekening'] . "]",
+                        "USERNAME" => $data["username"],
+                        "DATETIME" => date('YmdHis')
                     ];
 
 
@@ -485,6 +481,8 @@ class TabunganController extends Controller
 
                 $vaData = DBF::table('', 'MpayDsn')
                     ->raw("SELECT m.TGL_TRAN, m.BUKTI_TRX, t.NO_REK, t.NAMA, t.ALAMAT, m.JUMLAH, t.SALDO_AWAL, t.SALDO_AKHR FROM TRN_TAB m LEFT JOIN MST_TAB t ON t.NO_REK = m.NO_REK WHERE (m.BUKTI_TRX LIKE 'MT%' OR m.BUKTI_TRX LIKE 'MP%')")
+                    ->where('m.TGL_TRAN', '>=', $tglawal)
+                    ->where('m.TGL_TRAN', '<=', $tglakhir)
                     ->get();
 
                 if (!empty($vaData)) {
@@ -545,21 +543,25 @@ class TabunganController extends Controller
 
 
                 $vaSetoran = DBF::table('', 'MpayDsn')
-                    ->raw("SELECT COUNT(*) AS totalSetoran, IIF(SUM(`JUMLAH`) IS NULL, 0, SUM(`JUMLAH`)) AS jumlahMutasiSetoran FROM TRN_TAB WHERE (BUKTI_TRX LIKE 'MT%' OR BUKTI_TRX LIKE 'MP%')")
+                    ->raw("SELECT COUNT(*) AS TOTAL_SETOR, IIF(SUM(`JUMLAH`) IS NULL, 0, SUM(`JUMLAH`)) AS JUMLAH_MUTASI_SETOR FROM TRN_TAB WHERE (BUKTI_TRX LIKE 'MT%' OR BUKTI_TRX LIKE 'MP%')")
                     ->where('D_K', '=', 'K')
                     ->where('OPRT', '=', $data['username'])
+                    ->where('TGL_TRAN', '>=', $tglawal)
+                    ->where('TGL_TRAN', '<=', $tglakhir)
                     ->get();
 
                 $vaPenarikan = DBF::table('', 'MpayDsn')
-                    ->raw("SELECT COUNT(*) AS totalSetoran, IIF(SUM(`JUMLAH`) IS NULL, 0, SUM(`JUMLAH`)) AS jumlahMutasiSetoran FROM TRN_TAB WHERE (BUKTI_TRX LIKE 'MT%' OR BUKTI_TRX LIKE 'MP%')")
+                    ->raw("SELECT COUNT(*) AS TOTAL_SETOR, IIF(SUM(`JUMLAH`) IS NULL, 0, SUM(`JUMLAH`)) AS JUMLAH_MUTASI_SETOR FROM TRN_TAB WHERE (BUKTI_TRX LIKE 'MT%' OR BUKTI_TRX LIKE 'MP%')")
                     ->where('D_K', '=', 'D')
                     ->where('OPRT', '=', $data['username'])
+                    ->where('TGL_TRAN', '>=', $tglawal)
+                    ->where('TGL_TRAN', '<=', $tglakhir)
                     ->get();
 
 
                 $vaData = [
-                    'setoran' => $vaSetoran,
-                    'penarikan' => $vaPenarikan,
+                    'SETORAN' => $vaSetoran,
+                    'PENARIKAN' => $vaPenarikan,
                 ];
 
                 if (!empty($vaData)) {
